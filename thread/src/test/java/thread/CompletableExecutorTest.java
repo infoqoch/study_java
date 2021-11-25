@@ -235,24 +235,6 @@ public class CompletableExecutorTest {
         return array;
     }
 
-
-    Callable<String> callableMaker(String target, long sleep) {
-        Callable<String> callable = ()-> {
-            System.out.println("["+Thread.currentThread().getName()+"] Hello "+target);
-
-            try {
-                Thread.sleep(sleep);
-                System.out.println("["+Thread.currentThread().getName()+"] Bye "+target);
-                return "["+Thread.currentThread().getName()+"]good!";
-            } catch (InterruptedException e) {
-                System.out.println("["+Thread.currentThread().getName()+"] interrupted "+target);
-
-            }
-            return "["+Thread.currentThread().getName()+"]bad!";
-        };
-        return callable;
-    }
-
     void gracefullyDestroy(long sleep ) {
         try {
             Thread.sleep(sleep);
