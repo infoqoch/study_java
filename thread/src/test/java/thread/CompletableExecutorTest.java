@@ -2,7 +2,11 @@ package thread;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 public class CompletableExecutorTest {
 
@@ -93,7 +97,143 @@ public class CompletableExecutorTest {
         System.out.println("main thread destroy"); // Runnable 의 영향인지 위의 스레드보다 먼저 동작한다.
     }
 
+    @Test
+    void compose() throws ExecutionException, InterruptedException {
+        long startTime = System.currentTimeMillis();
 
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            sleep(1000);
+            System.out.println(Thread.currentThread().getName()+"] inner code1");
+            return "result";
+        });
+
+        CompletableFuture<String> future2 = future.thenCompose(s -> // future.get() 을 통한 인자가 바로 다음 스레드의 인자로 제공한다.
+                CompletableFuture.supplyAsync(() -> {
+                    System.out.println(Thread.currentThread().getName()+"] inner code2");
+                    return s.toUpperCase();
+                }));
+
+        String s = future2.get();
+        System.out.println(s);
+
+        gracefullyDestroy(1000l, startTime); // 역시나 위의 스레드가 정리 된 후 이 스레드가 동작한다. 음. 근데 get() 이 있으므로 당연한 이야기이긴 하다.
+    }
+
+    @Test
+    void combine_handle_multiple_returns_at_once(){
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            System.out.println(Thread.currentThread().getName()+"] inner code1");
+            return "thread1";
+        });
+
+        CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> {
+            System.out.println(Thread.currentThread().getName()+"] inner code2");
+            return "thread2";
+        });
+
+        CompletableFuture<String> resultFuture = future.thenCombine(future2, (s, s2) -> s + " and " + s2);
+
+        try {
+            System.out.println(resultFuture.get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    @Test
+    void run_all_of_future_at_once_AND_insert_each_other_result() throws ExecutionException, InterruptedException {
+        CompletableFuture[] array = getCompletableFutures();
+
+        List<CompletableFuture<String>> list = Arrays.asList(array);
+        CompletableFuture.allOf(array); // 동시에 여러 개의 future 를 동작한다. 그리고 각각의 future 를 채운다.
+
+        System.out.println(array[0].get());
+    }
+    @Test
+    void run_all_of_future_at_once_AND_insert_each_other_result_AND_stream() throws ExecutionException, InterruptedException {
+        CompletableFuture[] array = getCompletableFutures();
+        List<CompletableFuture<String>> list = Arrays.asList(array);
+
+        CompletableFuture<List<String>> results = CompletableFuture.allOf(array) // 동시에 여러 개의 future 를 동작한다. 그리고 각각의 future 를 채운다.
+                .thenApply(
+                        v -> list.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toList()));
+
+        for (String s : results.get()) {
+            System.out.println(s);
+        }
+    }
+    @Test
+    void get_any_of_the_first_ended_thread_result() throws ExecutionException, InterruptedException {
+        CompletableFuture[] array = getCompletableFutures();
+        List<CompletableFuture<String>> list = Arrays.asList(array);
+
+        for(int i=0; i<5; i++){
+            CompletableFuture.anyOf(array).thenAccept(o -> System.out.println(" the first result : =========== > "+ o.toString()));
+        }
+    }
+
+    @Test
+    void handle_exception() throws ExecutionException, InterruptedException {
+        boolean switchBtn = false;
+
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            if(switchBtn){
+                throw new IllegalStateException("예욋!");
+            }
+            return "hello";
+        }).exceptionally(ex -> {
+            System.out.println(ex.getMessage());
+            return "error";
+        });
+        System.out.println("switch : "+switchBtn+ " -> result : "+future.get());
+
+    }
+    @Test
+    void handle_handle() throws ExecutionException, InterruptedException {
+        boolean switchBtn = true;
+
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            if(switchBtn){
+                throw new IllegalStateException("예욋!");
+            }
+            return "hello";
+        }).handle((result, ex) -> {
+            if(ex!=null){
+                System.out.println(ex.getMessage());
+                return "error";
+            }
+            return result;
+
+        });
+        System.out.println("switch : "+switchBtn+ " -> result : "+future.get());
+
+    }
+
+    private CompletableFuture[] getCompletableFutures() {
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            System.out.println(Thread.currentThread().getName() + "] inner code1");
+            return "thread1";
+        });
+
+        CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> {
+            System.out.println(Thread.currentThread().getName() + "] inner code2");
+            return "thread2";
+        });
+
+        CompletableFuture<String> future3 = CompletableFuture.supplyAsync(() -> {
+            System.out.println(Thread.currentThread().getName() + "] inner code2");
+            return "thread3";
+        });
+
+        CompletableFuture[] array = {future, future2, future3};
+        return array;
+    }
 
 
     Callable<String> callableMaker(String target, long sleep) {
@@ -127,5 +267,13 @@ public class CompletableExecutorTest {
         gracefullyDestroy(sleep);
         long result = System.currentTimeMillis() - startTime;
         System.out.println("sleep : "+sleep+", result : "+result+", result -start : "+(result-sleep));
+    }
+
+    void sleep(long sleep){
+        try {
+            Thread.sleep(sleep);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
