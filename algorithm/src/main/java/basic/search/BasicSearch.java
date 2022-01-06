@@ -1,4 +1,4 @@
-package basic;
+package basic.search;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
