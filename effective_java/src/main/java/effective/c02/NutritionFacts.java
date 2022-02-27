@@ -1,4 +1,4 @@
-package effective.c2;
+package effective.c02;
 
 import lombok.Getter;
 import lombok.ToString;

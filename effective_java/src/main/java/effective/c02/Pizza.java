@@ -1,6 +1,4 @@
-package effective.c2;
-
-import java.util.Set;
+package effective.c02;
 
 public abstract class Pizza {
     public enum Topping {HAM, MUSHROOM, ONION, PEPPER, SAUSAGE}

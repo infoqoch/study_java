@@ -1,9 +1,7 @@
-package effective.c2;
+package effective.c02;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class NutritionFactsTest {
     @Test
