@@ -1,8 +1,8 @@
 package enums;
 
+import enums.generic.EnumGeneric;
+import enums.generic.Fruit;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class EnumGenericTest {
     @Test

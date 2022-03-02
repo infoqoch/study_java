@@ -1,4 +1,4 @@
-package enums;
+package enums.generic;
 
 import lombok.Data;
 
