@@ -55,4 +55,11 @@ public class DateApiTest {
         String format = LocalDate.now().format(MMddyyyy);
         System.out.println(format);
     }
+
+    @Test
+    void strToLocalDateTime(){
+        String target = "2022-03-14 21:38:33";
+        final LocalDateTime parse = LocalDateTime.parse(target);
+        System.out.println("parse = " + parse);
+    }
 }
