@@ -28,6 +28,7 @@ test {
 	testLogging {
 		events "passed", "skipped", "failed"
 	}
+	jvmArgs ["-parameters"]
 }
 
 jar { //
